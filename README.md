@@ -1,2 +1,5 @@
 # Nucleo-F746ZG
-Nucleo-F746ZG Board Support Package Coming Soon
+
+Stratify OS can be installed on the Nucleo-F746ZG board in less than one minute.
+
+[Learn More](https://stratifylabs.co/hardware/nucleo144/)

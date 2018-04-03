@@ -52,7 +52,7 @@ limitations under the License.
 #define STM32_ARCH_CLOCK_APB2_CLOCK_DIVIDER 2
 #define STM32_ARCH_CLOCK_48_CLOCK_SELECTION 0
 #define STM32_ARCH_CLOCK_VOLTAGE_SCALE 1
-#define STM32_ARCH_CLOCK_FLASH_LATENCY 5
+#define STM32_ARCH_CLOCK_FLASH_LATENCY 7
 
 //--------------------------------------------Symbols-------------------------------------------------
 

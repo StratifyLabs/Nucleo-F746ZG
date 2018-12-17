@@ -1,0 +1,17 @@
+{
+   "description": "This BSP can be used to run Stratify OS on the STM32F Nucleo-F746ZG board.",
+   "github": "https://github.com/StratifyLabs/Nucleo-F746ZG",
+   "name": "Nucleo-F746ZG",
+   "permissions": "public",
+   "publisher": "Stratify Labs, Inc",
+   "tags": "stm32,arm,cortex-m7",
+   "type": "os",
+   "uid": "9cQyOTk3fZXOuMtPyf5j9X4H4b83",
+   "version": "0.9",
+   "hardwaredId": "0x00000013",
+   "timestamp": 1544977315,
+   "documentId": "XCw1jMjiObLMUDKZFRG2",
+   "buildList": {
+      "IZHKrNj8E5yUFo74pQqW": "0.9"
+   }
+}

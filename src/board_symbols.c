@@ -20,4 +20,7 @@ limitations under the License.
 
 #include "config.h"
 
+#define SYMBOLS_IGNORE_WCHAR 0 //214 - 190
+#define SYMBOLS_USE_EXCEPTIONS 1 //218 - 214
+
 #include <sos/symbols/table.h>

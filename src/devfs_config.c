@@ -1,6 +1,6 @@
 /*
 
-Copyright 2011-2018 Stratify Labs, Inc
+Copyright 2011-2019 Stratify Labs, Inc
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ limitations under the License.
 #include "config.h"
 #include "sl_config.h"
 #include "link_config.h"
+#include "netif_lan8742a.h"
 
 //--------------------------------------------Device Filesystem-------------------------------------------------
 
@@ -56,134 +57,134 @@ limitations under the License.
  *
  *
  */
-//USART2
-UARTFIFO_DECLARE_CONFIG_STATE(uart1_fifo, 1024, 1,
-										UART_FLAG_SET_LINE_CODING_DEFAULT, 8, 115200,
-										SOS_BOARD_USART2_RX_PORT, SOS_BOARD_USART2_RX_PIN, //RX
-										SOS_BOARD_USART2_TX_PORT, SOS_BOARD_USART2_TX_PIN, //TX
-										0xff, 0xff,
-										0xff, 0xff);
-#if !defined __debug
-//USART3
-UARTFIFO_DECLARE_CONFIG_STATE(uart2_fifo, 1024, 1,
-										UART_FLAG_SET_LINE_CODING_DEFAULT, 8, 115200,
-										SOS_BOARD_USART3_RX_PORT, SOS_BOARD_USART3_RX_PIN, //RX
-										SOS_BOARD_USART3_TX_PORT, SOS_BOARD_USART3_TX_PIN, //TX
-										0xff, 0xff,
-										0xff, 0xff);
-#endif
 
 //USART6
-UARTFIFO_DECLARE_CONFIG_STATE(uart5_fifo, 1024, 1,
-										UART_FLAG_SET_LINE_CODING_DEFAULT, 8, 115200,
-										SOS_BOARD_USART6_RX_PORT, SOS_BOARD_USART6_RX_PIN, //RX
-										SOS_BOARD_USART6_TX_PORT, SOS_BOARD_USART6_TX_PIN, //TX
-										0xff, 0xff,
-										0xff, 0xff);
+char uart5_fifo_buffer[64];
+fifo_config_t uart5_fifo_config = {
+	.size = 64,
+	.buffer = uart5_fifo_buffer
+};
 
-//I2C1
-I2C_DECLARE_CONFIG_MASTER(i2c0,
-								  I2C_FLAG_SET_MASTER,
-								  100000,
-								  SOS_BOARD_I2C1_SDA_PORT, SOS_BOARD_I2C1_SDA_PIN, //SDA
-								  SOS_BOARD_I2C1_SCL_PORT, SOS_BOARD_I2C1_SCL_PIN); //SCL
-
-//I2C2
-I2C_DECLARE_CONFIG_MASTER(i2c1,
-								  I2C_FLAG_SET_MASTER,
-								  100000,
-								  SOS_BOARD_I2C2_SDA_PORT, SOS_BOARD_I2C2_SDA_PIN, //SDA
-								  SOS_BOARD_I2C2_SCL_PORT, SOS_BOARD_I2C2_SCL_PIN); //SCL
-
-
-#define SPI_DMA_FLAGS STM32_DMA_FLAG_IS_NORMAL | \
-	STM32_DMA_FLAG_IS_MEMORY_SINGLE | \
+#define UART_DMA_FLAGS STM32_DMA_FLAG_IS_MEMORY_SINGLE | \
 	STM32_DMA_FLAG_IS_PERIPH_SINGLE | \
 	STM32_DMA_FLAG_IS_PERIPH_BYTE | \
 	STM32_DMA_FLAG_IS_MEMORY_BYTE
 
-const stm32_spi_dma_config_t spi0_dma_config = {
-	.spi_config = {
+stm32_uart_dma_config_t uart5_dma_config = {
+	.uart_config = {
 		.attr = {
-			.o_flags = SPI_FLAG_SET_MASTER | SPI_FLAG_IS_FORMAT_SPI | SPI_FLAG_IS_MODE0 | SPI_FLAG_IS_FULL_DUPLEX,
+			.o_flags = UART_FLAG_SET_LINE_CODING_DEFAULT,
+			.freq = 9600,
 			.width = 8,
-			.freq = 1000000UL,
 			.pin_assignment = {
-				.miso = {SOS_BOARD_SPI1_MISO_PORT, SOS_BOARD_SPI1_MISO_PIN},
-				.mosi = {SOS_BOARD_SPI1_MOSI_PORT, SOS_BOARD_SPI1_MOSI_PIN},
-				.sck = {SOS_BOARD_SPI1_SCK_PORT, SOS_BOARD_SPI1_SCK_PIN},
-				.cs = {SOS_BOARD_SPI1_CS_PORT, SOS_BOARD_SPI1_CS_PIN}
+				.tx = { 6, 14 }, //PF14
+				.rx = { 6, 9 }, //PF9
+				.rts = { 0xff, 0xff },
+				.cts = { 0xff, 0xff }
 			}
-		}
+		},
+		.fifo_config = &uart5_fifo_config
 	},
 	.dma_config = {
 		.rx = {
-			.dma_number = SOS_BOARD_SPI1_RX_DMA,
-			.stream_number = SOS_BOARD_SPI1_RX_DMA_STREAM,
-			.channel_number = SOS_BOARD_SPI1_RX_DMA_CHANNEL,
+			.dma_number = STM32_DMA2,
+			.stream_number = 2,
+			.channel_number = 5,
 			.priority = STM32_DMA_PRIORITY_LOW,
-			.o_flags = STM32_DMA_FLAG_IS_PERIPH_TO_MEMORY |
-			SPI_DMA_FLAGS,
+			.o_flags = STM32_DMA_FLAG_IS_PERIPH_TO_MEMORY | UART_DMA_FLAGS | STM32_DMA_FLAG_IS_CIRCULAR
 		},
 		.tx = {
-			.dma_number = SOS_BOARD_SPI1_TX_DMA,
-			.stream_number = SOS_BOARD_SPI1_TX_DMA_STREAM,
-			.channel_number = SOS_BOARD_SPI1_TX_DMA_CHANNEL,
+			.dma_number = STM32_DMA2,
+			.stream_number = 6,
+			.channel_number = 5,
 			.priority = STM32_DMA_PRIORITY_LOW,
-			.o_flags = STM32_DMA_FLAG_IS_MEMORY_TO_PERIPH |
-			SPI_DMA_FLAGS
+			.o_flags = STM32_DMA_FLAG_IS_MEMORY_TO_PERIPH | UART_DMA_FLAGS | STM32_DMA_FLAG_IS_NORMAL
 		}
 	}
 };
-
-const stm32_spi_dma_config_t spi2_dma_config = {
-	.spi_config = {
-		.attr = {
-			.o_flags = SPI_FLAG_SET_MASTER | SPI_FLAG_IS_FORMAT_SPI | SPI_FLAG_IS_MODE0 | SPI_FLAG_IS_FULL_DUPLEX,
-			.width = 8,
-			.freq = 1000000UL,
-			.pin_assignment = {
-				.miso = {SOS_BOARD_SPI3_MISO_PORT, SOS_BOARD_SPI3_MISO_PIN},
-				.mosi = {SOS_BOARD_SPI3_MOSI_PORT, SOS_BOARD_SPI3_MOSI_PIN},
-				.sck = {SOS_BOARD_SPI3_SCK_PORT, SOS_BOARD_SPI3_SCK_PIN},
-				.cs = {SOS_BOARD_SPI3_CS_PORT, SOS_BOARD_SPI3_CS_PIN}
-			}
-		}
-	},
-	.dma_config = {
-		.rx = {
-			.dma_number = SOS_BOARD_SPI3_RX_DMA,
-			.stream_number = SOS_BOARD_SPI3_RX_DMA_STREAM,
-			.channel_number = SOS_BOARD_SPI3_RX_DMA_CHANNEL,
-			.priority = STM32_DMA_PRIORITY_LOW,
-			.o_flags = STM32_DMA_FLAG_IS_PERIPH_TO_MEMORY |
-			SPI_DMA_FLAGS,
-		},
-		.tx = {
-			.dma_number = SOS_BOARD_SPI3_TX_DMA,
-			.stream_number = SOS_BOARD_SPI3_TX_DMA_STREAM,
-			.channel_number = SOS_BOARD_SPI3_TX_DMA_CHANNEL,
-			.priority = STM32_DMA_PRIORITY_LOW,
-			.o_flags = STM32_DMA_FLAG_IS_MEMORY_TO_PERIPH |
-			SPI_DMA_FLAGS
-		}
-	}
-};
-
-//Coming Soon
-//SD Card as DMA
-//I2S2
-//I2S3
-//SAI1A/B
 
 
 FIFO_DECLARE_CONFIG_STATE(stdio_in, SOS_BOARD_STDIO_BUFFER_SIZE);
 FIFO_DECLARE_CONFIG_STATE(stdio_out, SOS_BOARD_STDIO_BUFFER_SIZE);
 CFIFO_DECLARE_CONFIG_STATE_4(board_fifo, 256);
 
-#if !defined SOS_BOARD_USB_PORT
-#define SOS_BOARD_USB_PORT 0
-#endif
+u8 eth_tx_buffer[STM32_ETH_DMA_BUFFER_SIZE];
+u8 eth_rx_buffer[STM32_ETH_DMA_BUFFER_SIZE];
+
+const stm32_eth_dma_config_t eth0_config = {
+	.eth_config = {
+		.attr = {
+			.o_flags = ETH_FLAG_SET_INTERFACE |
+			ETH_FLAG_START |
+			ETH_FLAG_IS_RMII |
+			ETH_FLAG_IS_AUTONEGOTIATION_ENABLED,
+			.pin_assignment = {
+				.rmii = {
+					.clk = {0, 1}, //PA1
+					.txd0 = {6, 13}, //PG13
+					.txd1 = {1, 13}, //PB13
+					.tx_en = {6, 11}, //PG11
+					.rxd0 = {2, 4}, //PC4
+					.rxd1 = {2, 5}, //PC5
+					.crs_dv = {0, 7}, //PA7
+					.rx_er = {0xff, 0xff}, //??
+					.unused[0] = {0xff, 0xff},
+					.unused[1] = {0xff, 0xff},
+					.unused[2] = {0xff, 0xff},
+					.unused[3] = {0xff, 0xff},
+					.unused[4] = {0xff, 0xff},
+					.unused[5] = {0xff, 0xff},
+					.unused[6] = {0xff, 0xff},
+					.unused[7] = {0xff, 0xff}
+				},
+				.mdio = {0, 2}, //PA2
+				.mdc = {2, 1} //PC1
+			},
+			.mac_address[0] = 0x00,
+			.mac_address[1] = 0x80,
+			.mac_address[2] = 0xe1,
+			.mac_address[3] = 0x00,
+			.mac_address[4] = 0x00,
+			.mac_address[5] = 0x00,
+			.mac_address[6] = 0x00, //unused
+			.mac_address[7] = 0x00, //unused
+			.phy_address = 0 //address of PHY CHIP
+		}
+	},
+	.tx_buffer = eth_tx_buffer,
+	.rx_buffer = eth_rx_buffer
+};
+
+const rtc_config_t rtc_config = {
+	.attr = {
+		.o_flags = RTC_FLAG_ENABLE,
+	}
+};
+
+//this is custom for the STM32 SPI DMA -- it is compatible with the drive_sdspi implementation
+typedef struct {
+	mcu_pin_t cs;
+	u32 spi_config_size;
+	stm32_spi_dma_config_t spi;
+} drive_sdspi_stm32_dma_config_t;
+
+//#define SOS_BOARD_SPI1_SCK_PIN {0, 5} //PA5
+//#define SOS_BOARD_SPI1_MISO_PIN {0, 6} //PA6
+//#define SOS_BOARD_SPI1_MOSI_PIN {1, 5} //PB5
+//#define SOS_BOARD_SPI1_CS_PIN {0xff, 0xff} //Not used
+
+#define SOS_BOARD_SPI1_RX_DMA STM32_DMA2
+#define SOS_BOARD_SPI1_RX_DMA_STREAM 0
+#define SOS_BOARD_SPI1_RX_DMA_CHANNEL 3
+#define SOS_BOARD_SPI1_TX_DMA STM32_DMA2
+#define SOS_BOARD_SPI1_TX_DMA_STREAM 3
+#define SOS_BOARD_SPI1_TX_DMA_CHANNEL 3
+
+#define SPI_DMA_FLAGS STM32_DMA_FLAG_IS_NORMAL | \
+	STM32_DMA_FLAG_IS_MEMORY_SINGLE | \
+	STM32_DMA_FLAG_IS_PERIPH_SINGLE | \
+	STM32_DMA_FLAG_IS_PERIPH_BYTE | \
+	STM32_DMA_FLAG_IS_MEMORY_BYTE
 
 /* This is the list of devices that will show up in the /dev folder.
  */
@@ -193,18 +194,14 @@ const devfs_device_t devfs_list[] = {
 	DEVFS_DEVICE("fifo", cfifo, 0, &board_fifo_config, &board_fifo_state, 0666, SOS_USER_ROOT, S_IFCHR),
 	DEVFS_DEVICE("stdio-out", fifo, 0, &stdio_out_config, &stdio_out_state, 0666, SOS_USER_ROOT, S_IFCHR),
 	DEVFS_DEVICE("stdio-in", fifo, 0, &stdio_in_config, &stdio_in_state, 0666, SOS_USER_ROOT, S_IFCHR),
-	DEVFS_DEVICE("link-phy-usb", usbfifo, SOS_BOARD_USB_PORT, &sos_link_transport_usb_fifo_cfg, &sos_link_transport_usb_fifo_state, 0666, SOS_USER_ROOT, S_IFCHR),
+	DEVFS_DEVICE("link-phy-usb", usbfifo, 0, &sos_link_transport_usb_fifo_cfg, &sos_link_transport_usb_fifo_state, 0666, SOS_USER_ROOT, S_IFCHR),
 	DEVFS_DEVICE("sys", sys, 0, 0, 0, 0666, SOS_USER_ROOT, S_IFCHR),
-	//DEVFS_DEVICE("rtc", mcu_rtc, 0, 0, 0, 0666, SOS_USER_ROOT, S_IFCHR),
 
 	//MCU peripherals
 	DEVFS_DEVICE("core", mcu_core, 0, 0, 0, 0666, SOS_USER_ROOT, S_IFCHR),
 	DEVFS_DEVICE("core0", mcu_core, 0, 0, 0, 0666, SOS_USER_ROOT, S_IFCHR),
 
-	DEVFS_DEVICE("i2c0", mcu_i2c, 0, 0, 0, 0666, SOS_USER_ROOT, S_IFCHR),
-	DEVFS_DEVICE("i2c1", mcu_i2c, 1, 0, 0, 0666, SOS_USER_ROOT, S_IFCHR),
-	DEVFS_DEVICE("i2c2", mcu_i2c, 2, 0, 0, 0666, SOS_USER_ROOT, S_IFCHR),
-	DEVFS_DEVICE("i2c3", mcu_i2c, 3, 0, 0, 0666, SOS_USER_ROOT, S_IFCHR),
+	DEVFS_DEVICE("eth0", netif_lan8742a, 0, &eth0_config, 0, 0666, SOS_USER_ROOT, S_IFCHR),
 
 	DEVFS_DEVICE("pio0", mcu_pio, 0, 0, 0, 0666, SOS_USER_ROOT, S_IFCHR), //GPIOA
 	DEVFS_DEVICE("pio1", mcu_pio, 1, 0, 0, 0666, SOS_USER_ROOT, S_IFCHR), //GPIOB
@@ -214,6 +211,8 @@ const devfs_device_t devfs_list[] = {
 	DEVFS_DEVICE("pio5", mcu_pio, 5, 0, 0, 0666, SOS_USER_ROOT, S_IFCHR), //GPIOF
 	DEVFS_DEVICE("pio6", mcu_pio, 6, 0, 0, 0666, SOS_USER_ROOT, S_IFCHR), //GPIOG
 	DEVFS_DEVICE("pio7", mcu_pio, 7, 0, 0, 0666, SOS_USER_ROOT, S_IFCHR), //GPIOH
+
+	DEVFS_DEVICE("rtc", mcu_rtc, 0, &rtc_config, 0, 0666, SOS_USER_ROOT, S_IFCHR),
 
 	DEVFS_DEVICE("spi0", mcu_spi, 0, 0, 0, 0666, SOS_USER_ROOT, S_IFCHR),
 	DEVFS_DEVICE("spi1", mcu_spi, 1, 0, 0, 0666, SOS_USER_ROOT, S_IFCHR),
@@ -230,11 +229,7 @@ const devfs_device_t devfs_list[] = {
 	DEVFS_DEVICE("tmr7", mcu_tmr, 7, 0, 0, 0666, SOS_USER_ROOT, S_IFCHR), //TIM8
 	//Does this chip have more timers?
 
-	DEVFS_DEVICE("uart1", uartfifo, 0, &uart1_fifo_config, &uart1_fifo_state, 0666, SOS_USER_ROOT, S_IFCHR),
-	#if !defined __debug
-	DEVFS_DEVICE("uart2", uartfifo, 0, &uart2_fifo_config, &uart2_fifo_state, 0666, SOS_USER_ROOT, S_IFCHR),
-	#endif
-	DEVFS_DEVICE("uart5", uartfifo, 0, &uart5_fifo_config, &uart5_fifo_state, 0666, SOS_USER_ROOT, S_IFCHR),
+	DEVFS_DEVICE("uart5", mcu_uart_dma, 5, &uart5_dma_config, 0, 0666, SOS_USER_ROOT, S_IFCHR),
 	DEVFS_TERMINATOR
 };
 

@@ -7,6 +7,8 @@ set(SOURCES
 	${SOURCES_PREFIX}/lwip_config.h
 	${SOURCES_PREFIX}/link_config.c
   ${SOURCES_PREFIX}/link_config.h
+	${SOURCES_PREFIX}/netif_lan8742a.c
+	${SOURCES_PREFIX}/netif_lan8742a.h
   ${SOURCES_PREFIX}/sl_config.h
   ${SOURCES_PREFIX}/mcu_config.c
 	${SOURCES_PREFIX}/sos_config.c

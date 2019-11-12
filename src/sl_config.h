@@ -9,6 +9,7 @@
 #define SL_CONFIG_VERSION_STRING "0.10"
 #define SL_CONFIG_VERSION_BCD 0x0A
 #define SL_CONFIG_DOCUMENT_ID "XCw1jMjiObLMUDKZFRG2"
+#define SL_CONFIG_TEAM_ID ""
 #define SL_CONFIG_NAME "Nucleo-F746ZG"
 #define SL_CONFIG_TYPE "os"
 #define SL_CONFIG_PUBLISHER "Stratify Labs, Inc"
